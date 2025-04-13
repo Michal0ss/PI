@@ -5,62 +5,44 @@
 #define MAX_TEXTS 20
 
 int guess_a_letter(char* text, const char* original_text) {
-    // Losowanie litery od 'A' do 'Z'
-    char letter = 'A' + rand() % 26;
+    char guessed_letter = 'A' + rand() % 26;
     int found = 0;
-    
-    // Sprawdzenie czy litera występuje w oryginalnym tekście i nie została jeszcze odkryta
     for (int i = 0; original_text[i] != '\0'; i++) {
-        if (original_text[i] == letter && text[i] == '_') {
-            text[i] = letter;
+        if (original_text[i] == guessed_letter && text[i] == '_') {
+            text[i] = guessed_letter;
             found = 1;
         }
     }
-    
     return found;
 }
 
+int is_fully_revealed(const char* text) {
+    for (int i = 0; text[i] != '\0'; i++) {
+        if (text[i] == '_') return 0;
+    }
+    return 1;
+}
+
 char* play(const char* original_text, const int number_of_players, const int turns, int* p_player) {
-    // Inicjalizacja zakrytego tekstu
-    int length = strlen(original_text);
-    char* text = (char*)malloc((length + 1) * sizeof(char));
-    
-    for (int i = 0; i < length; i++) {
-        if (original_text[i] == ' ') {
-            text[i] = ' ';
+    int len = strlen(original_text);
+    char* current_text = malloc((len + 1) * sizeof(char));
+    for (int i = 0; i < len; i++) {
+        current_text[i] = (original_text[i] == ' ') ? ' ' : '_';
+    }
+    current_text[len] = '\0';
+
+    int player = 0;
+    for (int i = 0; i < turns; i++) {
+        *p_player = player;
+        if (guess_a_letter(current_text, original_text)) {
+            if (is_fully_revealed(current_text)) break;
+            i--; // stay on same player
         } else {
-            text[i] = '_';
+            player = (player + 1) % number_of_players;
         }
     }
-    text[length] = '\0';
-    
-    *p_player = 0; // Rozpoczyna gracz 0
-    int rounds_played = 0;
-    int game_over = 0;
-    
-    while (rounds_played < turns && !game_over) {
-        int result = guess_a_letter(text, original_text);
-        
-        // Sprawdzenie czy całe hasło zostało odgadnięte
-        game_over = 1;
-        for (int i = 0; i < length; i++) {
-            if (original_text[i] != ' ' && text[i] == '_') {
-                game_over = 0;
-                break;
-            }
-        }
-        
-        if (!result || game_over) {
-            // Zmiana gracza tylko jeśli litera nie została znaleziona lub gra się zakończyła
-            *p_player = (*p_player + 1) % number_of_players;
-        }
-        
-        if (!game_over) {
-            rounds_played++;
-        }
-    }
-    
-    return text;
+
+    return current_text;
 }
 
 int main() {
